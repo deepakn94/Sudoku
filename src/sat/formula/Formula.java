@@ -6,7 +6,10 @@
  */
 package sat.formula;
 
+import immutable.EmptyImList;
 import immutable.ImList;
+import immutable.ImListIterator;
+import immutable.NonEmptyImList;
 
 import java.util.Iterator;
 
@@ -46,9 +49,7 @@ public class Formula {
      * @return the true problem
      */
     public Formula() {
-
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	this.clauses = new EmptyImList<Clause> ();
     }
 
     /**
@@ -58,8 +59,13 @@ public class Formula {
      * @return the problem with a single clause containing the literal l
      */
     public Formula(Variable l) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	Literal literal = PosLiteral.make(l);
+    	Clause clause = new Clause(literal);
+        this.clauses = new NonEmptyImList<Clause> (clause);
+    }
+    
+    public Formula(ImList<Clause> clauses) {
+    	this.clauses = clauses;
     }
 
     /**
@@ -68,8 +74,7 @@ public class Formula {
      * @return the problem with a single clause c
      */
     public Formula(Clause c) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+        this.clauses = new NonEmptyImList<Clause> (c);
     }
 
     /**
@@ -78,8 +83,9 @@ public class Formula {
      * @return a new problem with the clauses of this, but c added
      */
     public Formula addClause(Clause c) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	ImList<Clause> clauses = this.getClauses();
+    	ImList<Clause> newClauses = clauses.add(c);
+        return new Formula(newClauses);
     }
 
     /**
@@ -88,8 +94,7 @@ public class Formula {
      * @return list of clauses
      */
     public ImList<Clause> getClauses() {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+        return clauses;
     }
 
     /**
@@ -99,16 +104,21 @@ public class Formula {
      *         order
      */
     public Iterator<Clause> iterator() {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+        return new ImListIterator<Clause>(this.clauses);
     }
 
     /**
      * @return a new problem corresponding to the conjunction of this and p
      */
     public Formula and(Formula p) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	ImList<Clause> finalClauses = this.getClauses();
+        Iterator<Clause> formulaIterator = p.iterator();
+        while (formulaIterator.hasNext()) {
+        	Clause nextClause = formulaIterator.next();
+        	finalClauses = finalClauses.add(nextClause);
+        }
+        
+        return new Formula(finalClauses);
     }
 
     /**

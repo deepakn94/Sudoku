@@ -6,6 +6,9 @@
  */
 package sudoku;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 
 import sat.env.Environment;
@@ -47,8 +50,10 @@ public class Sudoku {
      *            makes a standard Sudoku puzzle with a 9x9 grid.
      */
     public Sudoku(int dim) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	this.dim = dim;
+    	this.size = dim * dim;
+    	this.square = new int[size][size];
+    	this.occupies = new Variable[size][size][size];
     }
 
     /**
@@ -71,8 +76,10 @@ public class Sudoku {
      *            square[i].length for 0<=i<dim.
      */
     public Sudoku(int dim, int[][] square) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	this.dim = dim;
+    	this.size = dim * dim;
+    	this.square = square;
+    	this.occupies = new Variable[size][size][size];
     }
 
     /**
@@ -95,8 +102,49 @@ public class Sudoku {
      */
     public static Sudoku fromFile(int dim, String filename) throws IOException,
             ParseException {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	int size = dim * dim;
+    	int[][] newSquare = new int[size][size];
+    	
+    	FileReader fileReader;
+		
+		try {
+			fileReader = new FileReader(filename);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			throw new RuntimeException("File not found");
+		}
+		
+		BufferedReader reader = new BufferedReader(fileReader);
+		String line = "";
+		
+		int rowCount = 0;
+		try {
+			while ((line = reader.readLine()) != null) {
+				if (rowCount >= size) {
+					throw new ParseException("Too many rows");
+				}
+				int[] newRow = new int[size];
+				char[] arrayCopy = line.toCharArray();
+				int lineLength = line.length();
+				if (lineLength != (dim * dim)) {
+					throw new ParseException("Too many columns");
+				}
+				for (int i=0; i<size; i++) {
+					if (arrayCopy[i] == '.') 
+						newRow[i] = 0;
+					else
+						newRow[i] = arrayCopy[i] - 48; //Converting ASCII code to normal integer
+				}
+				newSquare[rowCount] = newRow;
+				rowCount++;
+			}
+			
+			return new Sudoku(dim, newSquare);
+		} finally {
+			fileReader.close();
+			reader.close();
+		}
+
     }
 
     /**
@@ -120,8 +168,20 @@ public class Sudoku {
      * @return a string corresponding to this grid
      */
     public String toString() {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	StringBuilder stringRep = new StringBuilder();
+    	for (int i = 0; i < size; ++i ) {
+    		String tempString = "";
+			for (int j = 0; j < size; ++j) {
+				if (j==0) 
+					tempString += square[i][j];
+				else 
+					tempString += (" " + square[i][j]);
+			}
+			tempString += "\n";
+			stringRep.append(tempString);
+		}
+    	
+    	return stringRep.toString();
     }
 
     /**

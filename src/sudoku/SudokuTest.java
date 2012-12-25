@@ -2,7 +2,11 @@ package sudoku;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+
 import org.junit.Test;
+
+import sudoku.Sudoku.ParseException;
 
 
 public class SudokuTest {
@@ -16,6 +20,10 @@ public class SudokuTest {
         assert false;
     }
 
-    // TODO: put your test cases here
+    @Test
+    public void testReadFile() throws IOException, ParseException {
+    	Sudoku testSudoku = Sudoku.fromFile(3, "samples/sudoku_easy.txt");
+    	System.out.println(testSudoku);
+    }
     
 }
