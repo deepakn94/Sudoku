@@ -64,7 +64,12 @@ public class Formula {
         this.clauses = new NonEmptyImList<Clause> (clause);
     }
     
-    public Formula(ImList<Clause> clauses) {
+    /**
+     * Create a new problem that contains the given set of clauses
+     * 
+     * @return the problem with the given set of clauses
+     */
+    private Formula(ImList<Clause> clauses) {
     	this.clauses = clauses;
     }
 
@@ -125,18 +130,35 @@ public class Formula {
      * @return a new problem corresponding to the disjunction of this and p
      */
     public Formula or(Formula p) {
-        // TODO: implement this.
         // Hint: you'll need to use the distributive law to preserve conjunctive normal form, i.e.:
         //   to do (a & b) .or (c & d),
-        //   you'll need to make (a | b) & (a | c) & (b | c) & (b | d)        
-        throw new RuntimeException("not yet implemented.");
+        //   you'll need to make (a | d) & (a | c) & (b | c) & (b | d)  
+    	ImList<Clause> clauses = new EmptyImList<Clause> ();
+        for (Clause clause1 : this.clauses) {
+        	for (Clause clause2 : p.clauses) {
+        		Iterator<Literal> literalIterator1 = clause1.iterator();
+        		
+        		while (literalIterator1.hasNext()) {
+        			Literal literal1 = literalIterator1.next();
+        			Iterator<Literal> literalIterator2 = clause2.iterator();
+        			while (literalIterator2.hasNext()) {
+        				Literal literal2 = literalIterator2.next();
+        				Clause newClause = new Clause(literal1);
+        				newClause = newClause.add(literal2);
+        				if (newClause != null)
+                			clauses = clauses.add(newClause);
+        			}
+        		}
+        		
+        	}
+        }
+        return new Formula(clauses);
     }
 
     /**
      * @return a new problem corresponding to the negation of this
      */
     public Formula not() {
-        // TODO: implement this.
         // Hint: you'll need to apply DeMorgan's Laws (http://en.wikipedia.org/wiki/De_Morgan's_laws)
         // to move the negation down to the literals, and the distributive law to preserve 
         // conjunctive normal form, i.e.:
@@ -144,7 +166,25 @@ public class Formula {
         //   you'll need to make !((a | b) & c) 
         //                       => (!a & !b) | !c            (moving negation down to the literals)
         //                       => (!a | !c) & (!b | !c)    (conjunctive normal form)
-        throw new RuntimeException("not yet implemented.");
+    	ImList<Formula> formulae = new EmptyImList<Formula> ();
+        for (Clause clause : this.clauses) {
+        	Iterator<Literal> literalIterator = clause.iterator();
+        	ImList<Clause> clauses = new EmptyImList<Clause> ();
+        	while (literalIterator.hasNext()) {
+        		Literal literal = literalIterator.next();
+        		Literal negationLiteral = literal.getNegation();
+        		clauses = clauses.add(new Clause(negationLiteral));
+        	}
+        	formulae = formulae.add(new Formula(clauses));
+        }
+        Formula finalFormula = formulae.first();
+        ImList<Formula> rest = formulae.rest();
+        Iterator<Formula> formulaIterator = rest.iterator();
+        while (formulaIterator.hasNext()) {
+        	Formula nextFormula = formulaIterator.next();
+        	finalFormula = finalFormula.or(nextFormula);
+        }
+        return finalFormula;
     }
 
     /**
@@ -152,8 +192,7 @@ public class Formula {
      * @return number of clauses in this
      */
     public int getSize() {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+        return clauses.size();
     }
 
     /**

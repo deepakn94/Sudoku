@@ -1,12 +1,16 @@
 package sat.formula;
 
 import static org.junit.Assert.*;
+import immutable.EmptyImList;
+import immutable.ImList;
+
 import org.junit.Test;
 
 public class FormulaTest {    
     Literal a = PosLiteral.make("a");
     Literal b = PosLiteral.make("b");
     Literal c = PosLiteral.make("c");
+    Literal d = PosLiteral.make("d");
     Literal na = a.getNegation();
     Literal nb = b.getNegation();
     Literal nc = c.getNegation();
@@ -20,7 +24,51 @@ public class FormulaTest {
     }
     
     
-    // TODO: put your test cases here
+    @Test
+    public void andTest() {
+    	Clause clause1 = new Clause(a);
+    	clause1 = clause1.add(nb);
+    	
+    	Clause clause2 = new Clause(c);
+    	clause2 = clause2.add(na);
+    	
+    	Formula formula1 = new Formula(clause1);
+    	Formula formula2 = new Formula(clause2);
+    	
+    	System.out.println(formula1.and(formula2));
+    }
+    
+    @Test
+    public void orTest() {
+    	Clause clause1 = new Clause(a);
+    	clause1 = clause1.add(b);
+    	
+    	Clause clause2 = new Clause(c);
+    	clause2 = clause2.add(d);
+    	
+    	Clause clause3 = new Clause(na);
+    	clause3 = clause3.add(nb);
+    	
+    	Formula formula1 = new Formula(clause1);
+    	Formula formula2 = new Formula(clause2);
+    	formula2 = formula2.addClause(clause3);
+    	
+    	System.out.println(formula1.or(formula2));
+    }
+    
+    @Test
+    public void notTest() {
+    	Clause clause1 = new Clause(a);
+    	clause1 = clause1.add(b);
+    	
+    	Clause clause2 = new Clause(c);
+    	clause2 = clause2.add(d);
+    	
+    	Formula formula = new Formula(clause1);
+    	formula = formula.addClause(clause2);
+    	
+    	System.out.println(formula.not());
+    }
 
     
     

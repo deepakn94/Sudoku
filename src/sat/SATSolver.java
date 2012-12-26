@@ -1,10 +1,13 @@
 package sat;
 
+import immutable.EmptyImList;
 import immutable.ImList;
 import sat.env.Environment;
+import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
 import sat.formula.Literal;
+import sat.formula.PosLiteral;
 
 /**
  * A simple DPLL SAT solver. See http://en.wikipedia.org/wiki/DPLL_algorithm
@@ -37,8 +40,38 @@ public class SATSolver {
      *         or null if no such environment exists.
      */
     private static Environment solve(ImList<Clause> clauses, Environment env) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	//TODO Figure out how to back-propagate
+    	
+       if (clauses.size() == 0) {
+    	   return env;
+       }
+       int minSize = Integer.MAX_VALUE;
+       Clause minClause = null;
+       for (Clause c : clauses) {
+    	   if (c.size() < minSize) {
+    		   minSize = c.size();
+    		   minClause = c;
+    	   }
+       }
+       if (minSize == 0) {
+    	   //TODO Look at handout to see what needs to be done here
+       } else if (minSize == 1) {
+    	   Literal literal = minClause.chooseLiteral();
+    	   Variable var = literal.getVariable();
+    	   Literal newLiteral = PosLiteral.make(var);
+    	   if (newLiteral.negates(literal)) {
+    		   Environment newEnv = env.putFalse(var);
+    		   ImList<Clause> newClauses = substitute(clauses,literal);
+    		   return solve(newClauses, newEnv);
+    	   } else {
+    		   Environment newEnv = env.putTrue(var);
+    		   ImList<Clause> newClauses = substitute(clauses,literal);
+    		   return solve(newClauses, newEnv);
+    	   }
+       } else {
+    	   //TODO Look at handout to see what needs to be done here
+       }
+       throw new RuntimeException("Not completely implemented yet");
     }
 
     /**
@@ -54,7 +87,14 @@ public class SATSolver {
     private static ImList<Clause> substitute(ImList<Clause> clauses,
             Literal l) {
         // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	ImList<Clause> newClauses = new EmptyImList<Clause> ();
+    	for (Clause clause : clauses) {
+    		Clause newClause = clause.reduce(l);
+    		if (newClause != null) {
+    			newClauses = newClauses.add(newClause);
+    		}
+    	}
+    	return newClauses;
     }
 
 }
