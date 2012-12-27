@@ -7,6 +7,7 @@ import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
 import sat.formula.Literal;
+import sat.formula.NegLiteral;
 import sat.formula.PosLiteral;
 
 /**
@@ -23,8 +24,9 @@ public class SATSolver {
      *         null if no such environment exists.
      */
     public static Environment solve(Formula formula) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+        Environment environment = new Environment();
+        ImList<Clause> clauses = formula.getClauses();
+        return solve(clauses, environment);
     }
 
     /**
@@ -40,8 +42,6 @@ public class SATSolver {
      *         or null if no such environment exists.
      */
     private static Environment solve(ImList<Clause> clauses, Environment env) {
-    	//TODO Figure out how to back-propagate
-    	
        if (clauses.size() == 0) {
     	   return env;
        }
@@ -54,7 +54,7 @@ public class SATSolver {
     	   }
        }
        if (minSize == 0) {
-    	   //TODO Look at handout to see what needs to be done here
+    	   return null; // This needs to be handled in the calling function; must back propagate now
        } else if (minSize == 1) {
     	   Literal literal = minClause.chooseLiteral();
     	   Variable var = literal.getVariable();
@@ -69,9 +69,19 @@ public class SATSolver {
     		   return solve(newClauses, newEnv);
     	   }
        } else {
-    	   //TODO Look at handout to see what needs to be done here
+    	   Literal literal = minClause.chooseLiteral();
+    	   Variable var = literal.getVariable();
+    	   Environment newEnv = env.putTrue(var);
+    	   ImList<Clause> newClauses = substitute(clauses, literal);
+    	   Environment solution = solve(newClauses, newEnv);
+    	   if (solution == null) {
+    		   newEnv = env.putFalse(var);
+    		   Literal negLiteral = NegLiteral.make(var);
+    		   newClauses = substitute(clauses, negLiteral);
+    		   return solve(newClauses, newEnv);
+    	   }
+    	   return solution;
        }
-       throw new RuntimeException("Not completely implemented yet");
     }
 
     /**
@@ -86,7 +96,6 @@ public class SATSolver {
      */
     private static ImList<Clause> substitute(ImList<Clause> clauses,
             Literal l) {
-        // TODO: implement this.
     	ImList<Clause> newClauses = new EmptyImList<Clause> ();
     	for (Clause clause : clauses) {
     		Clause newClause = clause.reduce(l);
