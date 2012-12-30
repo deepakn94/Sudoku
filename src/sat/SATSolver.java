@@ -25,8 +25,10 @@ public class SATSolver {
      */
     public static Environment solve(Formula formula) {
         Environment environment = new Environment();
+
         ImList<Clause> clauses = formula.getClauses();
-        return solve(clauses, environment);
+        Environment solution = solve(clauses, environment);
+        return solution;
     }
 
     /**
@@ -47,6 +49,7 @@ public class SATSolver {
        }
        int minSize = Integer.MAX_VALUE;
        Clause minClause = null;
+       // Find the minimum sized clause
        for (Clause c : clauses) {
     	   if (c.size() < minSize) {
     		   minSize = c.size();
@@ -54,8 +57,10 @@ public class SATSolver {
     	   }
        }
        if (minSize == 0) {
-    	   return null; // This needs to be handled in the calling function; must back propagate now
+    	   return null; // Back propagate; condition is not solvable
        } else if (minSize == 1) {
+    	   // If minimum sized clause has size 1, then assign variable such that the clause is satisfied, and then recurse on smaller problem
+    	   
     	   Literal literal = minClause.chooseLiteral();
     	   Variable var = literal.getVariable();
     	   Literal newLiteral = PosLiteral.make(var);
@@ -69,12 +74,16 @@ public class SATSolver {
     		   return solve(newClauses, newEnv);
     	   }
        } else {
+    	   // If minimum sized clause has size greater than 1, choose an arbitrary literal; assign it to true and then recurse
+    	   
     	   Literal literal = minClause.chooseLiteral();
     	   Variable var = literal.getVariable();
     	   Environment newEnv = env.putTrue(var);
-    	   ImList<Clause> newClauses = substitute(clauses, literal);
+    	   Literal posLiteral = PosLiteral.make(var);
+    	   ImList<Clause> newClauses = substitute(clauses, posLiteral);
     	   Environment solution = solve(newClauses, newEnv);
     	   if (solution == null) {
+    		   // If solution fails, back propagate
     		   newEnv = env.putFalse(var);
     		   Literal negLiteral = NegLiteral.make(var);
     		   newClauses = substitute(clauses, negLiteral);
@@ -97,6 +106,7 @@ public class SATSolver {
     private static ImList<Clause> substitute(ImList<Clause> clauses,
             Literal l) {
     	ImList<Clause> newClauses = new EmptyImList<Clause> ();
+
     	for (Clause clause : clauses) {
     		Clause newClause = clause.reduce(l);
     		if (newClause != null) {

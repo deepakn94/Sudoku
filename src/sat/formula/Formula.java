@@ -120,7 +120,7 @@ public class Formula {
         Iterator<Clause> formulaIterator = p.iterator();
         while (formulaIterator.hasNext()) {
         	Clause nextClause = formulaIterator.next();
-        	finalClauses = finalClauses.add(nextClause);
+        	finalClauses = finalClauses.add(nextClause); // Append the clause lists
         }
         
         return new Formula(finalClauses);

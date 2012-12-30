@@ -96,7 +96,8 @@ public class NonEmptyImList<E> implements ImList<E> {
     public boolean equals (Object o) {
         if (o == this) return true;
         if (!(o instanceof ImList)) return false;
-        ImList l = (ImList) o;
+        @SuppressWarnings("rawtypes")
+		ImList l = (ImList) o;
         if (l.size() != size()) return false;
         return first().equals(l.first()) && rest().equals(l.rest());
     }

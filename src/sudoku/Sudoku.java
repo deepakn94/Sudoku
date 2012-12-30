@@ -11,9 +11,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+import sat.env.Bool;
 import sat.env.Environment;
 import sat.env.Variable;
+import sat.formula.Clause;
 import sat.formula.Formula;
+import sat.formula.Literal;
+import sat.formula.NegLiteral;
+import sat.formula.PosLiteral;
 
 /**
  * Sudoku is an immutable abstract datatype representing instances of Sudoku.
@@ -36,10 +41,17 @@ public class Sudoku {
     private final Variable[][][] occupies;
 
     // Rep invariant
-    // TODO: write your rep invariant here
-    private void checkRep() {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    // square and occupies != null
+    // no element of square has value less than -1 or greater than or equal to size
+	private void checkRep() {
+        assert this.square != null : "Sudoku, Rep invariant: square non-null";
+        assert this.occupies != null : "Sudoku, Rep invariant: occupies non-null";
+        for (int i = 0; i<size; ++i) {
+        	for (int j = 0; j<size; ++j) {
+        		assert this.square[i][j] >= -1 : "Sudoku, Rep invariant: square value greater than or equal to -1";
+        		assert this.square[i][j] < size : "Sudoku, Rep invariant: square value less than size";
+        	}
+        }
     }
 
     /**
@@ -53,7 +65,24 @@ public class Sudoku {
     	this.dim = dim;
     	this.size = dim * dim;
     	this.square = new int[size][size];
+    	
+    	// Create a board in which each square is unoccupied
+    	for (int i =0; i<size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			this.square[i][j] = -1;
+    		}
+    	}
+    	
+    	// Create new variable objects corresponding to each square on the Sudoku board
     	this.occupies = new Variable[size][size][size];
+    	for (int i = 0; i<size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			for (int k = 0; k<size; ++k) {
+    				this.occupies[i][j][k] = new Variable(i + "," + j + "," + k); 
+    			}
+    		}
+    	}
+    	checkRep();
     }
 
     /**
@@ -78,8 +107,25 @@ public class Sudoku {
     public Sudoku(int dim, int[][] square) {
     	this.dim = dim;
     	this.size = dim * dim;
-    	this.square = square;
+    	this.square = new int[size][size];
+    	
+    	// Create a board in which squares are occupied as given in input parameter square
+    	for (int i = 0; i<size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			this.square[i][j] = square[i][j] - 1;
+    		}
+    	}
+    	
+    	// Create new variable objects corresponding to each square on the Sudoku board
     	this.occupies = new Variable[size][size][size];
+    	for (int i = 0; i<size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			for (int k = 0; k<size; ++k) {
+    				this.occupies[i][j][k] = new Variable(i + "," + j + "," + k); 
+    			}
+    		}
+    	}
+    	checkRep();
     }
 
     /**
@@ -107,6 +153,7 @@ public class Sudoku {
     	
     	FileReader fileReader;
 		
+    	// Creates a new fileReader object to read the given file 
 		try {
 			fileReader = new FileReader(filename);
 		} catch (FileNotFoundException e) {
@@ -135,12 +182,13 @@ public class Sudoku {
 					else
 						newRow[i] = arrayCopy[i] - 48; //Converting ASCII code to normal integer
 				}
-				newSquare[rowCount] = newRow;
+				newSquare[rowCount] = newRow; // Add the new row to the double dimensional square array
 				rowCount++;
 			}
 			
 			return new Sudoku(dim, newSquare);
 		} finally {
+			//Close all the readers
 			fileReader.close();
 			reader.close();
 		}
@@ -173,9 +221,9 @@ public class Sudoku {
     		String tempString = "";
 			for (int j = 0; j < size; ++j) {
 				if (j==0) 
-					tempString += square[i][j];
+					tempString += (square[i][j] + 1);
 				else 
-					tempString += (" " + square[i][j]);
+					tempString += (" " + (square[i][j] + 1));
 			}
 			tempString += "\n";
 			stringRep.append(tempString);
@@ -190,9 +238,125 @@ public class Sudoku {
      *         occupies the entry in row i, column j
      */
     public Formula getProblem() {
+    	Formula formula = new Formula();
 
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	// Takes into account the initial board state
+    	for (int i = 0; i< size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			if (square[i][j] >= 0) {
+    				Literal literal = PosLiteral.make(occupies[i][j][square[i][j]]);
+    				Clause clause = new Clause(literal);
+    				formula = formula.addClause(clause);
+    			}
+    		}
+    	}
+    	
+    	// Takes into account the fact that each square can contain only one number, and not multiple numbers
+    	for (int i = 0; i<size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			for (int k = 0; k<size; ++k) {
+    				for (int kp = k + 1; kp<size; ++kp) {
+    					Literal negLiteral1 = NegLiteral.make(occupies[i][j][k]);
+    					Literal negLiteral2 = NegLiteral.make(occupies[i][j][kp]);
+    					Clause clause = new Clause(negLiteral1);
+    					clause = clause.add(negLiteral2);
+    					formula = formula.addClause(clause);
+    				}
+    			}
+    		}
+    	}
+    	
+    	//Row condition; ensures that every row is some permutation of the set {1,2,...,size}
+    	for (int i = 0; i<size; ++i) {
+    		for (int k = 0; k<size; ++k) {
+    			Clause clause = new Clause();
+    			for (int j = 0; j<size; ++j) {
+    				Literal literal = PosLiteral.make(occupies[i][j][k]);
+    				clause = clause.add(literal);
+    			}
+    			// Ensures that every row contains at least one k, for all k in {1,2,...,size}
+    			formula = formula.addClause(clause);
+    		}
+    	}
+    	
+    	for (int i = 0; i<size; ++i) {
+    		for (int k = 0; k<size; ++k) {
+    			for (int j = 0; j<size; ++j) {
+    				for (int jp = j+1; jp<size; ++jp) {
+    					Literal negLiteral1 = NegLiteral.make(occupies[i][j][k]);
+    					Literal negLiteral2 = NegLiteral.make(occupies[i][jp][k]);
+    					Clause clause = new Clause(negLiteral1);
+    					clause = clause.add(negLiteral2);
+    					// Ensures that every row contains at most one k, for all k in {1,2,...,size}
+    					formula = formula.addClause(clause);
+    				}
+    			}
+    		}
+    	}
+    	
+    	//Column condition; ensures that every column is some permutation of the set {1,2,...,size}
+    	for (int j = 0; j<size; ++j) {
+    		for (int k = 0; k<size; ++k) {
+    			Clause clause = new Clause();
+    			for (int i = 0; i<size; ++i) {
+    				Literal literal = PosLiteral.make(occupies[i][j][k]);
+    				clause = clause.add(literal);
+    			}
+    			formula = formula.addClause(clause);
+    		}
+    	}
+    	
+    	for (int j = 0; j<size; ++j) {
+    		for (int k = 0; k<size; ++k) {
+    			for (int i = 0; i<size; ++i) {
+    				for (int ip = i+1; ip<size; ++ip) {
+    					Literal negLiteral1 = NegLiteral.make(occupies[i][j][k]);
+    					Literal negLiteral2 = NegLiteral.make(occupies[ip][j][k]);
+    					Clause clause = new Clause(negLiteral1);
+    					clause = clause.add(negLiteral2);
+    					formula = formula.addClause(clause);
+    				}
+    			}
+    		}
+    	}
+    	
+    	//Block condition; ensures that every block contains exactly one k for all k in {1,2,...,size}
+    	for (int xBlock = 0; xBlock < dim; ++xBlock) {
+    		for (int yBlock = 0; yBlock < dim; ++yBlock) {
+    			for (int k = 0; k<size; ++k) {
+    				Clause clause = new Clause();
+    				for (int i = 0; i < dim; ++i) {
+    					for (int j = 0; j < dim; ++j) {
+    						Literal literal = PosLiteral.make(occupies[(xBlock * dim) + i][(yBlock * dim) + j][k]);
+    						clause = clause.add(literal);
+    					}
+    				}
+    				formula = formula.addClause(clause);
+    			}
+    		}
+    	}
+    	
+    	for (int k = 0; k < size; ++k) {
+    		for (int xBlock = 0; xBlock < dim; ++xBlock) {
+    			for (int yBlock = 0; yBlock < dim; ++yBlock) {
+    				for (int i = 0; i < dim; ++i) {
+    					for (int j = 0; j < dim; ++j) {
+    						for (int ip = i; ip < dim; ++ip) {
+    							for (int jp = j + 1; jp < dim; ++jp) {
+    								Literal literal1 = NegLiteral.make(occupies[(xBlock * dim) + i][(yBlock * dim) + j][k]);
+    								Literal literal2 = NegLiteral.make(occupies[(xBlock * dim) + ip][(yBlock * dim) + jp][k]);
+    								Clause clause = new Clause(literal1);
+    								clause = clause.add(literal2);
+    								formula = formula.addClause(clause);
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
+    	
+    	return formula;
     }
 
     /**
@@ -205,9 +369,21 @@ public class Sudoku {
      *         blank entries.
      */
     public Sudoku interpretSolution(Environment e) {
-
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
+    	int[][] newSquares = new int[size][size];
+    	if (e == null) {
+    		return null; // Returns null if the Sudoku is unsolvable
+    	}
+    	for (int i=0; i<size; ++i) {
+    		for (int j = 0; j<size; ++j) {
+    			for (int k = 0; k<size; ++k) {
+    				Bool value = e.get(occupies[i][j][k]);
+    				if (value.equals(Bool.TRUE)) {
+    					newSquares[i][j] = k + 1;
+    				}
+    			}
+    		}
+    	}
+    	return new Sudoku(dim, newSquares);
     }
 
 }
